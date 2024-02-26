@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Edge against localhost",
+            "type": "blazorwasm",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/GameCourse",
+            "hosted": true,
+            "program": "${workspaceFolder}/GameCourse/bin/Debug/net8.0/GameCourse.dll",
+            "url": "https://localhost:7165"
+        }
+    ]
+}
