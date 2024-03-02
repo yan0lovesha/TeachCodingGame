@@ -5,6 +5,7 @@
 
 <style>
     .grid-container {
+        position: relative;
         display: grid;
         grid-template-columns: repeat(30, 40px);
         grid-template-rows: repeat(30, 40px);
@@ -14,20 +15,38 @@
     .grid-item {
         outline: 1px solid rgb(0, 0, 0, 0.8);
     }
+
+    .snake-node{
+        position: absolute;
+        background-color: red;
+        width: 40px;
+        height: 40px;
+    }
 </style>
 
 <div class="grid-container">
-    @foreach (var index in Enumerable.Range(0, ground.Height * ground.Width))
+    @foreach (var index in Enumerable.Range(0, GroundInGame.Height * GroundInGame.Width))
     {
-        <div class='grid-item'></div>
+        <div class="grid-item"></div>
+    }
+    @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
+    {
+        <div class="snake-node" style="top:@(SnakeInGame.Nodes[index].Y * 41)px; left:@(SnakeInGame.Nodes[index].X * 41)px"></div>
     }
 </div>
+
 
 @code {
     public class Position
     {
         public int X { get; set; }
         public int Y { get; set; }
+
+        public Position(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
     }
     public class Ground
     {
@@ -42,8 +61,40 @@
     }
     public class SnakeBody
     {
-        public List<int> Nodes { get; set; }
-    }
-    public Ground ground = new Ground(30, 30);
+        public List<Position> Nodes { get; set; } = new List<Position>();
 
+        public int Size
+        {
+            get
+            {
+                return Nodes.Count;
+            }
+        }
+
+        public SnakeBody(Position initialNode)
+        {
+            Nodes.Add(initialNode);
+        }
+    }
+
+    public Ground GroundInGame { get; set; }
+
+    public SnakeBody SnakeInGame { get; set; }
+
+    public void Initialize()
+    {
+        int groundHeight = 30;
+        int groundWidth = 30;
+        GroundInGame = new Ground(groundHeight, groundWidth);
+
+        Random random = new System.Random();
+        var initialSnakeBodyPosition = new Position(random.Next(groundWidth - 1), random.Next(groundHeight - 1));
+        SnakeInGame = new SnakeBody(initialSnakeBodyPosition);
+    }
+
+    protected override Task OnInitializedAsync()
+    {
+        Initialize();
+        return base.OnInitializedAsync();
+    }
 }
