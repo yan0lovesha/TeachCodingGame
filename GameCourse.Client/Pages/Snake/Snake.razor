@@ -1,0 +1,49 @@
+@page "/games/snake"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Snake</PageTitle>
+
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(30, 40px);
+        grid-template-rows: repeat(30, 40px);
+        gap: 1px;
+    }
+
+    .grid-item {
+        outline: 1px solid rgb(0, 0, 0, 0.8);
+    }
+</style>
+
+<div class="grid-container">
+    @foreach (var index in Enumerable.Range(0, ground.Height * ground.Width))
+    {
+        <div class='grid-item'></div>
+    }
+</div>
+
+@code {
+    public class Position
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
+    public class Ground
+    {
+        public int Height { get; set; }
+        public int Width { get; set; }
+
+        public Ground(int height, int width)
+        {
+            Height = height;
+            Width = width;
+        }
+    }
+    public class SnakeBody
+    {
+        public List<int> Nodes { get; set; }
+    }
+    public Ground ground = new Ground(30, 30);
+
+}
