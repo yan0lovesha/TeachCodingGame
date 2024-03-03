@@ -23,6 +23,7 @@
 
 ## Lesson 4: Analyze the project
 1. List the least acceptable rules
+
 2. Turn the real world requirements into programming concepts
 
 ## Lesson 5: Implement the Ground

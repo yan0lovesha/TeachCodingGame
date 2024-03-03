@@ -1,0 +1,231 @@
+@page "/games/snake"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Snake</PageTitle>
+<div @ref="snakeGameUIElement" tabindex="0" id="gameContainer" @onkeydown="OnKeyPress">
+    <style>
+        .grid-container {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(30, 40px);
+            grid-template-rows: repeat(30, 40px);
+            gap: 1px;
+        }
+
+        .grid-item {
+            outline: 1px solid rgb(0, 0, 0, 0.8);
+        }
+
+        .snake-node {
+            position: absolute;
+            background-color: red;
+            width: 40px;
+            height: 40px;
+        }
+
+        .food {
+            position: absolute;
+            background-color: blue;
+            width: 40px;
+            height: 40px;
+        }
+    </style>
+
+    @if (!@isLoaded)
+    {
+        <p>Loading</p>
+    }
+    else
+    {
+        <div class="grid-container">
+            @foreach (var index in Enumerable.Range(0, GroundInGame.Height * GroundInGame.Width))
+            {
+                <div class="grid-item"></div>
+            }
+            @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
+            {
+                <div class="snake-node"
+                    style="top:@(SnakeInGame.Nodes[index].Y * 41)px; left:@(SnakeInGame.Nodes[index].X * 41)px">
+                </div>
+            }
+            @foreach (var food in Foods)
+            {
+                <div class="food" style="top:@(food.Y * 41)px; left:@(food.X * 41)px">
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    enum Direction
+    {
+        Up,
+        Left,
+        Down,
+        Right
+    }
+
+    class Position
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+
+        public Position(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+    }
+
+    class Ground
+    {
+        public int Height { get; set; }
+        public int Width { get; set; }
+
+        public Ground(int height, int width)
+        {
+            Height = height;
+            Width = width;
+        }
+    }
+
+    class SnakeBody
+    {
+        bool isGrowing = false;
+
+        public List<Position> Nodes { get; set; } = new List<Position>();
+
+        public Position Head
+        {
+            get
+            {
+                return Nodes[0];
+            }
+        }
+
+        public int Size
+        {
+            get
+            {
+                return Nodes.Count;
+            }
+        }
+
+        public SnakeBody(Position initialNode)
+        {
+            Nodes.Add(initialNode);
+        }
+
+        public void Move(Direction direction)
+        {
+            var nextNode = direction switch
+            {
+                Direction.Up => new Position(Head.X, Head.Y - 1),
+                Direction.Left => new Position(Head.X - 1, Head.Y),
+                Direction.Down => new Position(Head.X, Head.Y + 1),
+                Direction.Right => new Position(Head.X + 1, Head.Y),
+                _ => throw new Exception("The direction is not supported")
+            };
+
+            Nodes.Insert(0, nextNode);
+
+            if (!isGrowing)
+            {
+                Nodes.RemoveAt(Nodes.Count - 1);
+            }
+            else
+            {
+                isGrowing = false;
+            }
+        }
+
+        public void Grow()
+        {
+            isGrowing = true;
+        }
+    }
+
+    bool isLoaded = false;
+
+    Ground GroundInGame { get; set; }
+
+    SnakeBody SnakeInGame { get; set; }
+
+    List<Position> Foods { get; set; } = new List<Position>();
+
+    Direction currentDirection = Direction.Up;
+
+    ElementReference snakeGameUIElement;
+    void Initialize()
+    {
+        int groundHeight = 30;
+        int groundWidth = 30;
+        GroundInGame = new Ground(groundHeight, groundWidth);
+
+        Random random = new System.Random();
+        var initialSnakeBodyPosition = new Position(random.Next(groundWidth - 1), random.Next(groundHeight - 1));
+        SnakeInGame = new SnakeBody(initialSnakeBodyPosition);
+    }
+
+    void ShowFood()
+    {
+        Random random = new System.Random();
+        var i = random.Next(9);
+        if (i < 5)
+        {
+            var foodX = random.Next(GroundInGame.Width - 1);
+            var foodY = random.Next(GroundInGame.Height - 1);
+            if (Foods.FirstOrDefault(f => f.X == foodX && f.Y == foodY) == null)
+            {
+                Foods.Add(new Position(foodX, foodY));
+            }
+        }
+    }
+
+    async Task GameLoop()
+    {
+        while (true)
+        {
+            await Task.Delay(300);
+            ShowFood();
+            SnakeInGame.Move(currentDirection);
+            var foodBeEaten = Foods.FirstOrDefault(f => f.X == SnakeInGame.Head.X && f.Y == SnakeInGame.Head.Y);
+            if (foodBeEaten != null)
+            {
+                SnakeInGame.Grow();
+                Foods.Remove(foodBeEaten);
+            }
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoaded = true;
+            await snakeGameUIElement.FocusAsync();
+            GameLoop();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Initialize();
+        await base.OnInitializedAsync();
+    }
+
+    private void OnKeyPress(KeyboardEventArgs e)
+    {
+        currentDirection = e.Key switch
+        {
+            "ArrowUp" => Direction.Up,
+            "ArrowLeft" => Direction.Left,
+            "ArrowDown" => Direction.Down,
+            "ArrowRight" => Direction.Right,
+            _ => currentDirection
+        };
+    }
+}
