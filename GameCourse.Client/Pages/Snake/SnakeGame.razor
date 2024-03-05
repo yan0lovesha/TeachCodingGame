@@ -20,8 +20,7 @@
             }
             @foreach (var food in Foods)
             {
-                <div class="food" style="top:@(food.Y * 41)px; left:@(food.X * 41)px">
-                </div>
+                <SnakeFood NodeSize="41" FoodPosition="@food"></SnakeFood>
             }
         </div>
     }

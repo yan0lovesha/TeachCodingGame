@@ -1,0 +1,10 @@
+﻿<div class="food" style="top:@(FoodPosition.Y * NodeSize)px; left:@(FoodPosition.X * NodeSize)px">
+</div>
+
+@code {
+    [Parameter]
+    public int NodeSize { get; set; } = 41;
+
+    [Parameter]
+    public SnakeGame.Position FoodPosition{ get; set; }
+}
