@@ -9,6 +9,16 @@
     }
     else
     {
+        <p>
+            @(
+                SnakeStatus switch
+                {
+                    GameStatus.Stopped => "Not Started",
+                    GameStatus.Running => "Running",
+                    GameStatus.Loose => "Your snake is dead"
+                }
+                )
+        </p>
         <div class="grid-container">
             @foreach (var index in Enumerable.Range(0, GroundInGame.Height * GroundInGame.Width))
             {
@@ -27,6 +37,13 @@
 </div>
 
 @code {
+    enum GameStatus
+    {
+        Stopped,
+        Running,
+        Loose
+    }
+
     enum Direction
     {
         Up,
@@ -86,7 +103,7 @@
             Nodes.Add(initialNode);
         }
 
-        public void Move(Direction direction)
+        public bool Move(Direction direction, Ground groundInGame)
         {
             var nextNode = direction switch
             {
@@ -96,6 +113,14 @@
                 Direction.Right => new Position(Head.X + 1, Head.Y),
                 _ => throw new Exception("The direction is not supported")
             };
+
+            // Loose if it hits the boundary or itself.
+            if (nextNode.X >= groundInGame.Width || nextNode.X < 0
+                || nextNode.Y >= groundInGame.Height || nextNode.Y < 0
+                || Nodes.Skip(1).FirstOrDefault(f => f.X == nextNode.X && f.Y == nextNode.Y) != null)
+            {
+                return false;
+            }
 
             Nodes.Insert(0, nextNode);
 
@@ -107,6 +132,8 @@
             {
                 isGrowing = false;
             }
+
+            return true;
         }
 
         public void Grow()
@@ -124,6 +151,8 @@
     List<Position> Foods { get; set; } = new List<Position>();
 
     Direction currentDirection = Direction.Up;
+
+    GameStatus SnakeStatus = GameStatus.Stopped;
 
     ElementReference snakeGameUIElement;
     void Initialize()
@@ -145,7 +174,8 @@
         {
             var foodX = random.Next(GroundInGame.Width - 1);
             var foodY = random.Next(GroundInGame.Height - 1);
-            if (Foods.FirstOrDefault(f => f.X == foodX && f.Y == foodY) == null)
+            if (Foods.FirstOrDefault(f => f.X == foodX && f.Y == foodY) == null &&
+            SnakeInGame.Nodes.FirstOrDefault(f => f.X == foodX && f.Y == foodY) == null)
             {
                 Foods.Add(new Position(foodX, foodY));
             }
@@ -154,16 +184,23 @@
 
     async Task GameLoop()
     {
-        while (true)
+        SnakeStatus = GameStatus.Running;
+        while (SnakeStatus == GameStatus.Running)
         {
             await Task.Delay(300);
             ShowFood();
-            SnakeInGame.Move(currentDirection);
-            var foodBeEaten = Foods.FirstOrDefault(f => f.X == SnakeInGame.Head.X && f.Y == SnakeInGame.Head.Y);
-            if (foodBeEaten != null)
+            if (SnakeInGame.Move(currentDirection, GroundInGame))
             {
-                SnakeInGame.Grow();
-                Foods.Remove(foodBeEaten);
+                var foodBeEaten = Foods.FirstOrDefault(f => f.X == SnakeInGame.Head.X && f.Y == SnakeInGame.Head.Y);
+                if (foodBeEaten != null)
+                {
+                    SnakeInGame.Grow();
+                    Foods.Remove(foodBeEaten);
+                }
+            }
+            else
+            {
+                SnakeStatus = GameStatus.Loose;
             }
             StateHasChanged();
         }
