@@ -1,0 +1,12 @@
+﻿
+<div class="snake-node"
+     style="top:@(NodePosition.Y * NodeSize)px; left:@(NodePosition.X * NodeSize)px">
+</div>
+
+@code {
+    [Parameter]
+    public int NodeSize { get; set; } = 41;
+
+    [Parameter]
+    public SnakeGame.Position NodePosition{ get; set; }
+}

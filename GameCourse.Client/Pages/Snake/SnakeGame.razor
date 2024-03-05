@@ -3,34 +3,6 @@
 
 <PageTitle>Snake</PageTitle>
 <div @ref="snakeGameUIElement" tabindex="0" id="gameContainer" @onkeydown="OnKeyPress">
-    <style>
-        .grid-container {
-            position: relative;
-            display: grid;
-            grid-template-columns: repeat(30, 40px);
-            grid-template-rows: repeat(30, 40px);
-            gap: 1px;
-        }
-
-        .grid-item {
-            outline: 1px solid rgb(0, 0, 0, 0.8);
-        }
-
-        .snake-node {
-            position: absolute;
-            background-color: red;
-            width: 40px;
-            height: 40px;
-        }
-
-        .food {
-            position: absolute;
-            background-color: blue;
-            width: 40px;
-            height: 40px;
-        }
-    </style>
-
     @if (!@isLoaded)
     {
         <p>Loading</p>
@@ -44,9 +16,7 @@
             }
             @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
             {
-                <div class="snake-node"
-                    style="top:@(SnakeInGame.Nodes[index].Y * 41)px; left:@(SnakeInGame.Nodes[index].X * 41)px">
-                </div>
+                <SnakeNode NodeSize="41" NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
             }
             @foreach (var food in Foods)
             {
@@ -66,7 +36,7 @@
         Right
     }
 
-    class Position
+    public class Position
     {
         public int X { get; set; }
         public int Y { get; set; }
