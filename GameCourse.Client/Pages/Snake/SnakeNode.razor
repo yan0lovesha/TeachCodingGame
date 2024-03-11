@@ -1,11 +1,12 @@
-﻿
+﻿@using static GameCourse.Client.Pages.Snake.SnakeGame
+
 <div class="snake-node"
-     style="top:@(NodePosition.Y * NodeSize)px; left:@(NodePosition.X * NodeSize)px; background-color: @(IsAlive ? "blue" : "grey")">
+     style="width:@(GameOptions.NodeSize - 1)px; height:@(GameOptions.NodeSize - 1)px; top:@(NodePosition.Y * NodeSize)px; left:@(NodePosition.X * NodeSize)px; background-color: @(IsAlive ? "blue" : "grey")">
 </div>
 
 @code {
     [Parameter]
-    public int NodeSize { get; set; } = 41;
+    public int NodeSize { get; set; }
 
     [Parameter]
     public bool IsAlive { get; set; } = true;

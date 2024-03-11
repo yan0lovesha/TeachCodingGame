@@ -1,11 +1,22 @@
-﻿<div class="food" style="top:@(FoodPosition.Y * NodeSize)px; left:@(FoodPosition.X * NodeSize)px">
+﻿@using static GameCourse.Client.Pages.Snake.SnakeGame
+<div class="food" style="@InlineStyle">
     ♥
 </div>
 
 @code {
     [Parameter]
-    public int NodeSize { get; set; } = 41;
+    public int NodeSize { get; set; }
 
     [Parameter]
     public SnakeGame.Position FoodPosition{ get; set; }
+
+    int edgeLength = GameOptions.NodeSize - 1;
+
+    string InlineStyle = "";
+
+    protected override void OnParametersSet()
+    {
+        InlineStyle = $"width:{edgeLength}px; height:{edgeLength}px; top:{FoodPosition.Y * NodeSize}px; left:{FoodPosition.X * NodeSize}px; font-size:{GameOptions.NodeSize - 1}px; line-height:{GameOptions.NodeSize - 1}px;";
+        base.OnParametersSet();
+    }
 }

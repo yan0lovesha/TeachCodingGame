@@ -26,17 +26,23 @@
             }
             @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
             {
-                <SnakeNode IsAlive=@(SnakeStatus != GameStatus.Loose) NodeSize="41" NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
+                <SnakeNode IsAlive=@(SnakeStatus != GameStatus.Loose) NodeSize=@(GameOptions.NodeSize) NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
             }
             @foreach (var food in Foods)
             {
-                <SnakeFood NodeSize="41" FoodPosition="@food"></SnakeFood>
+                <SnakeFood NodeSize=@(GameOptions.NodeSize) FoodPosition="@food"></SnakeFood>
             }
         </div>
     }
 </div>
 
 @code {
+    public static class GameOptions
+    {
+        public static int GroundSize = 30;
+        public static int NodeSize = 41;
+    }
+
     enum GameStatus
     {
         Stopped,
@@ -157,8 +163,8 @@
     ElementReference snakeGameUIElement;
     void Initialize()
     {
-        int groundHeight = 30;
-        int groundWidth = 30;
+        int groundHeight = GameOptions.GroundSize;
+        int groundWidth = GameOptions.GroundSize;
         GroundInGame = new Ground(groundHeight, groundWidth);
 
         Random random = new System.Random();
