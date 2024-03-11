@@ -17,7 +17,7 @@
                     GameStatus.Running => "Running",
                     GameStatus.Loose => "Your snake is dead"
                 }
-                )
+            )
         </p>
         <div class="grid-container">
             @foreach (var index in Enumerable.Range(0, GroundInGame.Height * GroundInGame.Width))
@@ -26,7 +26,7 @@
             }
             @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
             {
-                <SnakeNode NodeSize="41" NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
+                <SnakeNode IsAlive=@(SnakeStatus != GameStatus.Loose) NodeSize="41" NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
             }
             @foreach (var food in Foods)
             {
