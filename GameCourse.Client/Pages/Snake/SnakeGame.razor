@@ -3,44 +3,48 @@
 
 <PageTitle>Snake</PageTitle>
 <div @ref="snakeGameUIElement" tabindex="0" id="gameContainer" @onkeydown="OnKeyPress">
-    @if (!@isLoaded)
-    {
-        <p>Loading</p>
-    }
-    else
-    {
-        <p>
-            @(
-                SnakeStatus switch
+    <CascadingValue Value="@GameOptions">
+        @if (!@isLoaded)
+        {
+            <p>Loading</p>
+        }
+        else
+        {
+            <p>
+                @(
+                    SnakeStatus switch
+                    {
+                        GameStatus.Stopped => "Not Started",
+                        GameStatus.Running => "Running",
+                        GameStatus.Loose => "Your snake is dead"
+                    }
+                    )
+            </p>
+            <div class="grid-container">
+                @foreach (var index in Enumerable.Range(0, GroundInGame.Height * GroundInGame.Width))
                 {
-                    GameStatus.Stopped => "Not Started",
-                    GameStatus.Running => "Running",
-                    GameStatus.Loose => "Your snake is dead"
+                    <div class="grid-item"></div>
                 }
-            )
-        </p>
-        <div class="grid-container">
-            @foreach (var index in Enumerable.Range(0, GroundInGame.Height * GroundInGame.Width))
-            {
-                <div class="grid-item"></div>
-            }
-            @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
-            {
-                <SnakeNode IsAlive=@(SnakeStatus != GameStatus.Loose) NodeSize=@(GameOptions.NodeSize) NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
-            }
-            @foreach (var food in Foods)
-            {
-                <SnakeFood NodeSize=@(GameOptions.NodeSize) FoodPosition="@food"></SnakeFood>
-            }
-        </div>
-    }
+                @foreach (var index in Enumerable.Range(0, SnakeInGame.Size))
+                {
+                    <SnakeNode IsAlive=@(SnakeStatus != GameStatus.Loose) NodePosition="@(SnakeInGame.Nodes[index])"></SnakeNode>
+                }
+                @foreach (var food in Foods)
+                {
+                    <SnakeFood FoodPosition="@food"></SnakeFood>
+                }
+            </div>
+        }
+    </CascadingValue>
 </div>
 
 @code {
-    public static class GameOptions
+    public class SnakeGameOptions
     {
-        public static int GroundSize = 30;
-        public static int NodeSize = 41;
+        public int GroundSize { get; set; }
+        public int NodeSize { get; set; }
+        public int FoodSpeedPercentage { get; set; }
+        public int StepTimeInMs { get; set; }
     }
 
     enum GameStatus
@@ -148,6 +152,14 @@
         }
     }
 
+    SnakeGameOptions GameOptions = new SnakeGameOptions()
+        {
+            GroundSize = 30,
+            NodeSize = 41,
+            FoodSpeedPercentage = 3,
+            StepTimeInMs = 100,
+        };
+
     bool isLoaded = false;
 
     Ground GroundInGame { get; set; }
@@ -175,8 +187,8 @@
     void ShowFood()
     {
         Random random = new System.Random();
-        var i = random.Next(9);
-        if (i < 5)
+        var i = random.Next(100);
+        if (i < GameOptions.FoodSpeedPercentage)
         {
             var foodX = random.Next(GroundInGame.Width - 1);
             var foodY = random.Next(GroundInGame.Height - 1);
@@ -193,7 +205,7 @@
         SnakeStatus = GameStatus.Running;
         while (SnakeStatus == GameStatus.Running)
         {
-            await Task.Delay(300);
+            await Task.Delay(GameOptions.StepTimeInMs);
             ShowFood();
             if (SnakeInGame.Move(currentDirection, GroundInGame))
             {

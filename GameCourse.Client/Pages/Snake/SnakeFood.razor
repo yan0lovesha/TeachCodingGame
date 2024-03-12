@@ -4,19 +4,18 @@
 </div>
 
 @code {
-    [Parameter]
-    public int NodeSize { get; set; }
+    [CascadingParameter]
+    SnakeGameOptions GameOptions{ get; set; }
 
     [Parameter]
     public SnakeGame.Position FoodPosition{ get; set; }
-
-    int edgeLength = GameOptions.NodeSize - 1;
 
     string InlineStyle = "";
 
     protected override void OnParametersSet()
     {
-        InlineStyle = $"width:{edgeLength}px; height:{edgeLength}px; top:{FoodPosition.Y * NodeSize}px; left:{FoodPosition.X * NodeSize}px; font-size:{GameOptions.NodeSize - 1}px; line-height:{GameOptions.NodeSize - 1}px;";
+        var edgeLength = GameOptions.NodeSize - 1;
+        InlineStyle = $"width:{edgeLength}px; height:{edgeLength}px; top:{FoodPosition.Y * GameOptions.NodeSize}px; left:{FoodPosition.X * GameOptions.NodeSize}px; font-size:{GameOptions.NodeSize - 1}px; line-height:{GameOptions.NodeSize - 1}px;";
         base.OnParametersSet();
     }
 }
