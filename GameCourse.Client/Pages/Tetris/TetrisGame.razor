@@ -1,0 +1,13 @@
+﻿@page "/games/tetris"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>TetrisGame</PageTitle>
+
+@code {
+    Canvas GameCanvas = new Canvas();
+
+    private async Task GameLoop()
+    {
+        await Task.Delay(500);
+    }
+}
