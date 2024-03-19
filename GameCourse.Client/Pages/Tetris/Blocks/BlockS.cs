@@ -14,9 +14,11 @@
             {1,1,0}
         };
 
-        public override int[,] ShapeUp => shapeVertical;
-        public override int[,] ShapeRight => shapeHorizontal;
-        public override int[,] ShapeDown => shapeVertical;
-        public override int[,] ShapeLeft => shapeHorizontal;
+        public override string Color => "Yellow";
+
+        protected override int[,] ShapeUp => shapeVertical;
+        protected override int[,] ShapeRight => shapeHorizontal;
+        protected override int[,] ShapeDown => shapeVertical;
+        protected override int[,] ShapeLeft => shapeHorizontal;
     }
 }

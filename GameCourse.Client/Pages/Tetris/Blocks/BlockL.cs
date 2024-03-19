@@ -25,9 +25,11 @@
             {1,1,1}
         };
 
-        public override int[,] ShapeUp => shapeUp;
-        public override int[,] ShapeRight => shapeUp;
-        public override int[,] ShapeDown => shapeDown;
-        public override int[,] ShapeLeft => shapeLeft;
+        public override string Color => "Blue";
+
+        protected override int[,] ShapeUp => shapeUp;
+        protected override int[,] ShapeRight => shapeUp;
+        protected override int[,] ShapeDown => shapeDown;
+        protected override int[,] ShapeLeft => shapeLeft;
     }
 }

@@ -3,11 +3,93 @@
 
 <PageTitle>TetrisGame</PageTitle>
 
+<div @ref="gameUIElement" tabindex="0" id="gameContainer" @onkeydown="OnKeyPress">
+    <CascadingValue Value="Options">
+        @if (!@isLoaded)
+        {
+            <p>Loading</p>
+        }
+        else
+        {
+            <div id="canvas" style="@canvasStyle">
+                <!-- Active Block -->
+                <TetrisBlock BlockObject="@(GameCanvas.ActiveBlock)"></TetrisBlock>
+                <!-- End of Active Block -->
+                <!-- Canvas cells -->
+                @for (int row = 0; row < GameCanvas.Rows; row++)
+                {
+                    for (int column = 0; column < GameCanvas.Columns; column++)
+                    {
+                        <div id="CanvasCell_@(row)_@(column)" class="@(GameCanvas.Points[row,column].IsOccupied ? "CanvasCell" : "EmptyCanvasCell")" style="background-color: @(GameCanvas.Points[row,column].Color)"></div>
+                    }
+                }
+                <!-- End of Canvas cells -->
+            </div>
+        }
+    </CascadingValue>
+</div>
+
 @code {
-    Canvas GameCanvas = new Canvas();
+    bool isLoaded = false;
+    ElementReference gameUIElement;
+
+    GameOptions Options = new GameOptions()
+        {
+            CanvasRowsCount = 18,
+            CanvasColumnsCount = 12,
+            CellSize = 40
+        };
+
+    Canvas GameCanvas;
+
+    string canvasStyle = "";
 
     private async Task GameLoop()
     {
-        await Task.Delay(500);
+        while (true)
+        {
+            await Task.Delay(50);
+            GameCanvas.MoveActiveBlockTo(Direction.Down);
+            StateHasChanged();
+        }
+    }
+
+    private void OnKeyPress(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowUp":
+                GameCanvas.TurnActiveBlock();
+                break;
+            case "ArrowLeft":
+                GameCanvas.MoveActiveBlockTo(Direction.Left);
+                break;
+            case "ArrowDown":
+                GameCanvas.MoveActiveBlockTo(Direction.Down);
+                break;
+            case "ArrowRight":
+                GameCanvas.MoveActiveBlockTo(Direction.Right);
+                break;
+            default:
+                break;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        canvasStyle = $"width: {Options.CanvasColumnsCount * Options.CellSize + 8}px; height: {Options.CanvasRowsCount * Options.CellSize + 8}px; grid-template-columns: repeat({Options.CanvasColumnsCount}, {Options.CellSize}px); grid-template-rows: repeat({Options.CanvasRowsCount}, {Options.CellSize}px);";
+        GameCanvas = new Canvas(Options);
+        await base.OnParametersSetAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoaded = true;
+            await gameUIElement.FocusAsync();
+            GameLoop();
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 }

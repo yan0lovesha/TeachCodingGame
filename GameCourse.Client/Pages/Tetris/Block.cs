@@ -7,12 +7,29 @@
 
     public abstract class Block
     {
-        public virtual int[,] ShapeUp { get; }
-        public virtual int[,] ShapeRight { get; }
-        public virtual int[,] ShapeDown { get; }
-        public virtual int[,] ShapeLeft { get; }
+        protected virtual int[,] ShapeUp { get; }
+        protected virtual int[,] ShapeRight { get; }
+        protected virtual int[,] ShapeDown { get; }
+        protected virtual int[,] ShapeLeft { get; }
+
+        public virtual string Color { get; }
+
+        public int PositionRow { get; set; }
+        public int PositionColumn { get; set; }
+
+        public int BlockHeight => Shape.GetUpperBound(0) + 1;
+        public int BlockWidth => Shape.GetUpperBound(1) + 1;
 
         public Direction CurrentDirection { get; set; } = Direction.Up;
+
+        public int[,] Shape => CurrentDirection switch
+        {
+            Direction.Up => ShapeUp,
+            Direction.Right => ShapeRight,
+            Direction.Down => ShapeDown,
+            Direction.Left => ShapeLeft,
+            _ => throw new NotImplementedException()
+        };
 
         public void TurnRight()
         {
@@ -36,6 +53,21 @@
                 Direction.Right => Direction.Up,
                 _ => throw new InvalidOperationException()
             };
+        }
+
+        public void MoveLeft()
+        {
+            PositionColumn -= 1;
+        }
+
+        public void MoveRight()
+        {
+            PositionColumn += 1;
+        }
+
+        public void MoveDown()
+        {
+            PositionRow += 1;
         }
     }
 }

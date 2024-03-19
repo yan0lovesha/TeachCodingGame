@@ -1,0 +1,24 @@
+﻿<div id="ActiveBlock" style="grid-template-columns: repeat(@(BlockObject.BlockWidth), @(Options.CellSize)px);grid-template-rows: repeat(@(BlockObject.BlockHeight), @(Options.CellSize)px);gap: 0px; top: @(BlockObject.PositionRow * Options.CellSize)px; left: @(BlockObject.PositionColumn * Options.CellSize)px">
+    @for (int row = 0; row < BlockObject.BlockHeight; row++)
+    {
+        for (int column = 0; column < BlockObject.BlockWidth; column++)
+        {
+            <div id="BlockCell_@(row)_@(column)" class="@(BlockObject.Shape[row,column] == 1 ? "BlockCell" : "EmptyBlockCell")" style="background-color: @(GetCellColor(row, column));"></div>
+        }
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    public GameOptions Options{ get; set; }
+
+    [Parameter]
+    public Block BlockObject { get; set; }
+
+    private string GetCellColor(int row, int column) => BlockObject.Shape[row, column] == 1 ? BlockObject.Color : "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+    }
+}

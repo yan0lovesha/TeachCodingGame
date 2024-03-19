@@ -8,9 +8,11 @@
             {1,1}
         };
 
-        public override int[,] ShapeUp => shape;
-        public override int[,] ShapeRight => shape;
-        public override int[,] ShapeDown => shape;
-        public override int[,] ShapeLeft => shape;
+        public override string Color => "Black";
+
+        protected override int[,] ShapeUp => shape;
+        protected override int[,] ShapeRight => shape;
+        protected override int[,] ShapeDown => shape;
+        protected override int[,] ShapeLeft => shape;
     }
 }

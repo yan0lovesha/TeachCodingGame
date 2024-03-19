@@ -1,0 +1,6 @@
+﻿#canvas {
+    border: 4px double blue;
+    position: relative;
+    display: grid;
+    gap: 0px;
+}
