@@ -40,7 +40,8 @@ namespace GameCourse.Client.Pages.Tetris
         private void PickABlock()
         {
             ActiveBlock = BlockCandidatesQueue.Dequeue();
-            ActiveBlock.PositionRow = Columns / 2;
+            ActiveBlock.PositionRow = 0;
+            ActiveBlock.PositionColumn = Columns / 2;
             BlockCandidatesQueue.Enqueue(GetRandomBlock());
         }
 
@@ -64,16 +65,16 @@ namespace GameCourse.Client.Pages.Tetris
             PickABlock();
         }
 
-        private bool CanMoveLeft(int activeBlockHeight, int activeBlockWidth)
+        private bool CanMoveLeft()
         {
-            for (int row = 0; row < activeBlockHeight; row++)
+            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
             {
-                for (int col = 0; col < activeBlockWidth; col++)
+                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
                 {
                     if (col == 0 || ActiveBlock.Shape[row, col - 1] == 0)
                     {
-                        var leftPointInCanvas = Points[ActiveBlock.PositionRow + row, ActiveBlock.PositionColumn + col - 1];
-                        if (leftPointInCanvas.IsOccupied)
+                        var leftColumnIndexOfCanvas = ActiveBlock.PositionColumn + col - 1;
+                        if (ActiveBlock.Shape[row, col] == 1 && (leftColumnIndexOfCanvas < 0 || Points[ActiveBlock.PositionRow + row, leftColumnIndexOfCanvas].IsOccupied))
                         {
                             return false;
                         }
@@ -83,16 +84,16 @@ namespace GameCourse.Client.Pages.Tetris
 
             return true;
         }
-        private bool CanMoveRight(int activeBlockHeight, int activeBlockWidth)
+        private bool CanMoveRight()
         {
-            for (int row = 0; row < activeBlockHeight; row++)
+            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
             {
-                for (int col = 0; col < activeBlockWidth; col++)
+                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
                 {
-                    if (col == activeBlockWidth - 1 || ActiveBlock.Shape[row, col + 1] == 0)
+                    if (col == ActiveBlock.BlockWidth - 1 || ActiveBlock.Shape[row, col + 1] == 0)
                     {
-                        var leftPointInCanvas = Points[ActiveBlock.PositionRow + row, ActiveBlock.PositionColumn + col + 1];
-                        if (leftPointInCanvas.IsOccupied)
+                        var rightColumnIndexOfCanvas = ActiveBlock.PositionColumn + col + 1;
+                        if (ActiveBlock.Shape[row, col] == 1 && (rightColumnIndexOfCanvas > Points.GetUpperBound(1) || Points[ActiveBlock.PositionRow + row, rightColumnIndexOfCanvas].IsOccupied))
                         {
                             return false;
                         }
@@ -102,16 +103,16 @@ namespace GameCourse.Client.Pages.Tetris
 
             return true;
         }
-        private bool CanMoveDown(int activeBlockHeight, int activeBlockWidth)
+        private bool CanMoveDown()
         {
-            for (int row = 0; row < activeBlockHeight; row++)
+            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
             {
-                for (int col = 0; col < activeBlockWidth; col++)
+                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
                 {
-                    if (row == activeBlockHeight - 1 || ActiveBlock.Shape[row + 1, col] == 0)
+                    if (ActiveBlock.Shape[row, col] == 1 && (row == ActiveBlock.BlockHeight - 1 || ActiveBlock.Shape[row + 1, col] == 0))
                     {
-                        var leftPointInCanvas = Points[ActiveBlock.PositionRow + row + 1, ActiveBlock.PositionColumn + col];
-                        if (leftPointInCanvas.IsOccupied)
+                        var nextRowIndexOfCanvas = ActiveBlock.PositionRow + row + 1;
+                        if (nextRowIndexOfCanvas > Points.GetUpperBound(0) || Points[nextRowIndexOfCanvas, ActiveBlock.PositionColumn + col].IsOccupied)
                         {
                             return false;
                         }
@@ -126,9 +127,9 @@ namespace GameCourse.Client.Pages.Tetris
         {
             return direction switch
             {
-                Direction.Left => CanMoveLeft(ActiveBlock.BlockHeight, ActiveBlock.BlockWidth),
-                Direction.Right => CanMoveRight(ActiveBlock.BlockHeight, ActiveBlock.BlockWidth),
-                Direction.Down => CanMoveDown(ActiveBlock.BlockHeight, ActiveBlock.BlockWidth),
+                Direction.Left => CanMoveLeft(),
+                Direction.Right => CanMoveRight(),
+                Direction.Down => CanMoveDown(),
                 _ => false
             };
         }
@@ -152,6 +153,31 @@ namespace GameCourse.Client.Pages.Tetris
                         break;
                 };
             }
+            else
+            {
+                if (direction == Direction.Down)
+                {
+                    LockActiveBlock();
+                }
+            }
+        }
+
+        private void LockActiveBlock()
+        {
+            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
+            {
+                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
+                {
+                    if (ActiveBlock.Shape[row, col] == 1)
+                    {
+                        var point = Points[ActiveBlock.PositionRow + row, ActiveBlock.PositionColumn + col];
+                        point.IsOccupied = true;
+                        point.Color = ActiveBlock.Color;
+                    }
+                }
+            }
+
+            PickABlock();
         }
 
         public void TurnActiveBlock()
