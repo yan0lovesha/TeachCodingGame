@@ -28,7 +28,7 @@
         public override string Color => "Blue";
 
         protected override int[,] ShapeUp => shapeUp;
-        protected override int[,] ShapeRight => shapeUp;
+        protected override int[,] ShapeRight => ShapeRight;
         protected override int[,] ShapeDown => shapeDown;
         protected override int[,] ShapeLeft => shapeLeft;
     }
