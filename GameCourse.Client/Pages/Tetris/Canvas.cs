@@ -71,7 +71,7 @@ namespace GameCourse.Client.Pages.Tetris
             {
                 for (int col = 0; col < ActiveBlock.BlockWidth; col++)
                 {
-                    if (col == 0 || ActiveBlock.Shape[row, col - 1] == 0)
+                    if (ActiveBlock.PositionRow + row >= 0 && (col == 0 || ActiveBlock.Shape[row, col - 1] == 0))
                     {
                         var leftColumnIndexOfCanvas = ActiveBlock.PositionColumn + col - 1;
                         if (ActiveBlock.Shape[row, col] == 1 && (leftColumnIndexOfCanvas < 0 || Points[ActiveBlock.PositionRow + row, leftColumnIndexOfCanvas].IsOccupied))
@@ -90,7 +90,7 @@ namespace GameCourse.Client.Pages.Tetris
             {
                 for (int col = 0; col < ActiveBlock.BlockWidth; col++)
                 {
-                    if (col == ActiveBlock.BlockWidth - 1 || ActiveBlock.Shape[row, col + 1] == 0)
+                    if (ActiveBlock.PositionRow + row >= 0 && (col == ActiveBlock.BlockWidth - 1 || ActiveBlock.Shape[row, col + 1] == 0))
                     {
                         var rightColumnIndexOfCanvas = ActiveBlock.PositionColumn + col + 1;
                         if (ActiveBlock.Shape[row, col] == 1 && (rightColumnIndexOfCanvas > Points.GetUpperBound(1) || Points[ActiveBlock.PositionRow + row, rightColumnIndexOfCanvas].IsOccupied))
@@ -208,9 +208,22 @@ namespace GameCourse.Client.Pages.Tetris
 
         public void TurnActiveBlock()
         {
-            if (!AreShapeAndCanvasOverlap(ActiveBlock.PositionRow, ActiveBlock.PositionColumn, ActiveBlock.GetShapeAfterTurn(Direction.Right)))
+            var shapeAfterTurn = ActiveBlock.GetShapeAfterTurn(Direction.Right);
+            var shapeHeight = shapeAfterTurn.GetLength(0);
+            var shapeWidth = shapeAfterTurn.GetLength(1);
+
+            var outOfCanvasRight = Math.Max(ActiveBlock.PositionColumn + shapeWidth - Columns, 0);
+            var outOfCanvasBottom = Math.Max(ActiveBlock.PositionRow + shapeHeight - Rows, 0);
+
+            if (outOfCanvasRight >= 0 || outOfCanvasBottom >= 0)
             {
-                ActiveBlock.TurnRight();
+                // check if adjusted position will have overlap with canvas.
+                if (!AreShapeAndCanvasOverlap(ActiveBlock.PositionRow - outOfCanvasBottom, ActiveBlock.PositionColumn - outOfCanvasRight, shapeAfterTurn))
+                {
+                    ActiveBlock.PositionRow -= outOfCanvasBottom;
+                    ActiveBlock.PositionColumn -= outOfCanvasRight;
+                    ActiveBlock.TurnRight();
+                }
             }
         }
     }
