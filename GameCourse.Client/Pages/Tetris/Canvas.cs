@@ -180,9 +180,32 @@ namespace GameCourse.Client.Pages.Tetris
             PickABlock();
         }
 
+        private bool AreShapeAndCanvasOverlap(int blockPositionRow, int blockPositionCol, int[,] shape)
+        {
+            var shapeRowsCount = shape.GetLength(0);
+            var shapeColumnsCount = shape.GetLength(1);
+            for (int row = 0; row < shapeRowsCount; row++)
+            {
+                for (int col = 0; col < shapeColumnsCount; col++)
+                {
+                    var rowIndexOfCanvas = blockPositionRow + row;
+                    var colIndexOfCanvas = blockPositionCol + col;
+                    if (shape[row, col] == 1 && Points[rowIndexOfCanvas, colIndexOfCanvas].IsOccupied)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public void TurnActiveBlock()
         {
-            ActiveBlock.TurnRight();
+            if (!AreShapeAndCanvasOverlap(ActiveBlock.PositionRow, ActiveBlock.PositionColumn, ActiveBlock.GetShapeAfterTurn(Direction.Right)))
+            {
+                ActiveBlock.TurnRight();
+            }
         }
     }
 }

@@ -31,6 +31,23 @@
             _ => throw new NotImplementedException()
         };
 
+        public int[,] GetShapeAfterTurn(Direction turnDirection)
+        {
+            return (turnDirection, CurrentDirection) switch
+            {
+                (Direction.Right, Direction.Up) => ShapeLeft,
+                (Direction.Right, Direction.Right) => ShapeDown,
+                (Direction.Right, Direction.Down) => ShapeRight,
+                (Direction.Right, Direction.Left) => ShapeUp,
+
+                (Direction.Left, Direction.Up) => ShapeRight,
+                (Direction.Left, Direction.Right) => ShapeDown,
+                (Direction.Left, Direction.Down) => ShapeLeft,
+                (Direction.Left, Direction.Left) => ShapeUp,
+                _ => throw new NotImplementedException()
+            };
+        }
+
         public void TurnRight()
         {
             CurrentDirection = CurrentDirection switch
