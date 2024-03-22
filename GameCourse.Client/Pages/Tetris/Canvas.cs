@@ -40,7 +40,7 @@ namespace GameCourse.Client.Pages.Tetris
         private void PickABlock()
         {
             ActiveBlock = BlockCandidatesQueue.Dequeue();
-            ActiveBlock.PositionRow = 0;
+            ActiveBlock.PositionRow = 0 - ActiveBlock.BlockHeight - 1;
             ActiveBlock.PositionColumn = Columns / 2;
             BlockCandidatesQueue.Enqueue(GetRandomBlock());
         }
@@ -112,7 +112,8 @@ namespace GameCourse.Client.Pages.Tetris
                     if (ActiveBlock.Shape[row, col] == 1 && (row == ActiveBlock.BlockHeight - 1 || ActiveBlock.Shape[row + 1, col] == 0))
                     {
                         var nextRowIndexOfCanvas = ActiveBlock.PositionRow + row + 1;
-                        if (nextRowIndexOfCanvas > Points.GetUpperBound(0) || Points[nextRowIndexOfCanvas, ActiveBlock.PositionColumn + col].IsOccupied)
+                        if (nextRowIndexOfCanvas >= 0 &&
+                            (nextRowIndexOfCanvas > Points.GetUpperBound(0) || Points[nextRowIndexOfCanvas, ActiveBlock.PositionColumn + col].IsOccupied))
                         {
                             return false;
                         }
@@ -170,9 +171,14 @@ namespace GameCourse.Client.Pages.Tetris
                 {
                     if (ActiveBlock.Shape[row, col] == 1)
                     {
-                        var point = Points[ActiveBlock.PositionRow + row, ActiveBlock.PositionColumn + col];
-                        point.IsOccupied = true;
-                        point.Color = ActiveBlock.Color;
+                        var rowIndexOfCanvas = ActiveBlock.PositionRow + row;
+                        var colIndexOfCanvas = ActiveBlock.PositionColumn + col;
+                        if (rowIndexOfCanvas >= 0)
+                        {
+                            var point = Points[rowIndexOfCanvas, colIndexOfCanvas];
+                            point.IsOccupied = true;
+                            point.Color = ActiveBlock.Color;
+                        }
                     }
                 }
             }

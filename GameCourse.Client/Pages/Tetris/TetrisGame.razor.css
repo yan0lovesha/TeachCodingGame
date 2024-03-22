@@ -3,4 +3,5 @@
     position: relative;
     display: grid;
     gap: 0px;
+    overflow: hidden;
 }
