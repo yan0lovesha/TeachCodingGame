@@ -11,6 +11,7 @@
         }
         else
         {
+            <button @onclick="StartButtonClicked">Start</button>
             <div id="canvas" style="@canvasStyle">
                 <!-- Active Block -->
                 <TetrisBlock BlockObject="@(GameCanvas.ActiveBlock)"></TetrisBlock>
@@ -33,6 +34,13 @@
     bool isLoaded = false;
     ElementReference gameUIElement;
 
+    enum GameStatus
+    {
+        Stopped,
+        Running,
+        Loose
+    }
+
     GameOptions Options = new GameOptions()
         {
             CanvasRowsCount = 18,
@@ -41,12 +49,13 @@
         };
 
     Canvas GameCanvas;
+    GameStatus TetrisGameStatus = GameStatus.Stopped;
 
     string canvasStyle = "";
 
     private async Task GameLoop()
     {
-        while (true)
+        while (TetrisGameStatus == GameStatus.Running)
         {
             await Task.Delay(500);
             GameCanvas.MoveActiveBlockTo(Direction.Down);
@@ -87,9 +96,21 @@
         if (firstRender)
         {
             isLoaded = true;
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    private async Task StartButtonClicked(MouseEventArgs e)
+    {
+        if (TetrisGameStatus == GameStatus.Stopped)
+        {
+            TetrisGameStatus = GameStatus.Running;
             await gameUIElement.FocusAsync();
             GameLoop();
         }
-        await base.OnAfterRenderAsync(firstRender);
+        else if(TetrisGameStatus == GameStatus.Running)
+        {
+            TetrisGameStatus = GameStatus.Stopped;
+        }
     }
 }
