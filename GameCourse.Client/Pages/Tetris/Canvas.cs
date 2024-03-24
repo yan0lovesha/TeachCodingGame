@@ -162,6 +162,7 @@ namespace GameCourse.Client.Pages.Tetris
                 if (direction == Direction.Down)
                 {
                     LockActiveBlock();
+                    EliminateFullRows();
                 }
             }
         }
@@ -215,6 +216,53 @@ namespace GameCourse.Client.Pages.Tetris
             }
 
             return false;
+        }
+
+        private List<int> FindFullRows()
+        {
+            var fullRows = new List<int>();
+
+            // Find from bottom to top.
+            for (int row = Rows - 1; row >= 0; row--)
+            {
+                var rowIsFull = true;
+                for (int col = 0; col < Columns; col++)
+                {
+                    if (!Points[row, col].IsOccupied)
+                    {
+                        rowIsFull = false;
+                    }
+                }
+
+                if (rowIsFull)
+                {
+                    fullRows.Add(row);
+                }
+            }
+            return fullRows;
+        }
+
+        private void EliminateFullRows()
+        {
+            var fullRows = FindFullRows();
+            var firstEliminatingRow = fullRows[0];
+            var fillingRow = firstEliminatingRow;
+            for (int row = fillingRow; row >= 0; row--)
+            {
+                if (row == fullRows.FirstOrDefault())
+                {
+                    fullRows.RemoveAt(0);
+                }
+                else
+                {
+                    // move the row to filling row
+                    for (var col = 0; col < Columns; col++)
+                    {
+                        Points[fillingRow, col] = Points[row, col];
+                    }
+                    fillingRow--;
+                }
+            }
         }
 
         public void TurnActiveBlock()
