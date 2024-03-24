@@ -70,61 +70,38 @@ namespace GameCourse.Client.Pages.Tetris
 
         private bool CanMoveLeft()
         {
-            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
+            if (ActiveBlock.PositionColumn > 0 && !AreShapeAndCanvasOverlap(ActiveBlock.PositionRow, ActiveBlock.PositionColumn - 1, ActiveBlock.Shape))
             {
-                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
-                {
-                    if (ActiveBlock.PositionRow + row >= 0 && (col == 0 || ActiveBlock.Shape[row, col - 1] == 0))
-                    {
-                        var leftColumnIndexOfCanvas = ActiveBlock.PositionColumn + col - 1;
-                        if (ActiveBlock.Shape[row, col] == 1 && (leftColumnIndexOfCanvas < 0 || Points[ActiveBlock.PositionRow + row, leftColumnIndexOfCanvas].IsOccupied))
-                        {
-                            return false;
-                        }
-                    }
-                }
+                return true;
             }
-
-            return true;
+            else
+            {
+                return false;
+            }
         }
+
         private bool CanMoveRight()
         {
-            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
+            if (ActiveBlock.PositionColumn + ActiveBlock.BlockWidth < Columns && !AreShapeAndCanvasOverlap(ActiveBlock.PositionRow, ActiveBlock.PositionColumn + 1, ActiveBlock.Shape))
             {
-                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
-                {
-                    if (ActiveBlock.PositionRow + row >= 0 && (col == ActiveBlock.BlockWidth - 1 || ActiveBlock.Shape[row, col + 1] == 0))
-                    {
-                        var rightColumnIndexOfCanvas = ActiveBlock.PositionColumn + col + 1;
-                        if (ActiveBlock.Shape[row, col] == 1 && (rightColumnIndexOfCanvas > Points.GetUpperBound(1) || Points[ActiveBlock.PositionRow + row, rightColumnIndexOfCanvas].IsOccupied))
-                        {
-                            return false;
-                        }
-                    }
-                }
+                return true;
             }
-
-            return true;
+            else
+            {
+                return false;
+            }
         }
+
         private bool CanMoveDown()
         {
-            for (int row = 0; row < ActiveBlock.BlockHeight; row++)
+            if (ActiveBlock.PositionRow + ActiveBlock.BlockHeight < Rows && !AreShapeAndCanvasOverlap(ActiveBlock.PositionRow + 1, ActiveBlock.PositionColumn, ActiveBlock.Shape))
             {
-                for (int col = 0; col < ActiveBlock.BlockWidth; col++)
-                {
-                    if (ActiveBlock.Shape[row, col] == 1 && (row == ActiveBlock.BlockHeight - 1 || ActiveBlock.Shape[row + 1, col] == 0))
-                    {
-                        var nextRowIndexOfCanvas = ActiveBlock.PositionRow + row + 1;
-                        if (nextRowIndexOfCanvas >= 0 &&
-                            (nextRowIndexOfCanvas > Points.GetUpperBound(0) || Points[nextRowIndexOfCanvas, ActiveBlock.PositionColumn + col].IsOccupied))
-                        {
-                            return false;
-                        }
-                    }
-                }
+                return true;
             }
-
-            return true;
+            else
+            {
+                return false;
+            }
         }
 
         private bool CanMoveActiveBlockTo(Direction direction)
@@ -208,7 +185,8 @@ namespace GameCourse.Client.Pages.Tetris
                 {
                     var rowIndexOfCanvas = blockPositionRow + row;
                     var colIndexOfCanvas = blockPositionCol + col;
-                    if (shape[row, col] == 1 && Points[rowIndexOfCanvas, colIndexOfCanvas].IsOccupied)
+                    if (rowIndexOfCanvas >= 0 && rowIndexOfCanvas < Rows && colIndexOfCanvas >= 0 && colIndexOfCanvas < Columns &&
+                        shape[row, col] == 1 && Points[rowIndexOfCanvas, colIndexOfCanvas].IsOccupied)
                     {
                         return true;
                     }
@@ -245,22 +223,25 @@ namespace GameCourse.Client.Pages.Tetris
         private void EliminateFullRows()
         {
             var fullRows = FindFullRows();
-            var firstEliminatingRow = fullRows[0];
-            var fillingRow = firstEliminatingRow;
-            for (int row = fillingRow; row >= 0; row--)
+            if (fullRows.Count > 0)
             {
-                if (row == fullRows.FirstOrDefault())
+                var firstEliminatingRow = fullRows[0];
+                var fillingRow = firstEliminatingRow;
+                for (int row = fillingRow; row >= 0; row--)
                 {
-                    fullRows.RemoveAt(0);
-                }
-                else
-                {
-                    // move the row to filling row
-                    for (var col = 0; col < Columns; col++)
+                    if (row == fullRows.FirstOrDefault())
                     {
-                        Points[fillingRow, col] = Points[row, col];
+                        fullRows.RemoveAt(0);
                     }
-                    fillingRow--;
+                    else
+                    {
+                        // move the row to filling row
+                        for (var col = 0; col < Columns; col++)
+                        {
+                            Points[fillingRow, col] = Points[row, col];
+                        }
+                        fillingRow--;
+                    }
                 }
             }
         }
