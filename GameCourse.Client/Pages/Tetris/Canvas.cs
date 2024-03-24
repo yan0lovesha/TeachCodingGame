@@ -229,7 +229,7 @@ namespace GameCourse.Client.Pages.Tetris
                 var fillingRow = firstEliminatingRow;
                 for (int row = fillingRow; row >= 0; row--)
                 {
-                    if (row == fullRows.FirstOrDefault())
+                    if (fullRows.Count > 0)
                     {
                         fullRows.RemoveAt(0);
                     }
