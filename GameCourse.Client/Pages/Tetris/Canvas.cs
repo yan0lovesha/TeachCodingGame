@@ -43,7 +43,7 @@ namespace GameCourse.Client.Pages.Tetris
         private void PickABlock()
         {
             ActiveBlock = BlockCandidatesQueue.Dequeue();
-            ActiveBlock.PositionRow = 0 - ActiveBlock.BlockHeight - 1;
+            ActiveBlock.PositionRow = 0 - ActiveBlock.BlockHeight;
             ActiveBlock.PositionColumn = Columns / 2;
             BlockCandidatesQueue.Enqueue(GetRandomBlock());
         }
