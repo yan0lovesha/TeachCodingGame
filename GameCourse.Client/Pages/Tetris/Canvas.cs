@@ -1,4 +1,5 @@
 ﻿using GameCourse.Client.Pages.Tetris.Blocks;
+using GameCourse.Common;
 
 namespace GameCourse.Client.Pages.Tetris
 {
@@ -8,6 +9,8 @@ namespace GameCourse.Client.Pages.Tetris
         public int Columns { get; set; }
 
         public CanvasPoint[,] Points { get; set; }
+
+        public bool IsCanvasFull { get; set; }
 
         /// <summary>
         /// The block is current falling
@@ -173,11 +176,19 @@ namespace GameCourse.Client.Pages.Tetris
                     {
                         var rowIndexOfCanvas = ActiveBlock.PositionRow + row;
                         var colIndexOfCanvas = ActiveBlock.PositionColumn + col;
-                        if (rowIndexOfCanvas >= 0)
+
+                        // If the top outside of canvas is locked, that means the canvas is full.
+                        // The game is loose.
+                        if (rowIndexOfCanvas < 0)
+                        {
+                            IsCanvasFull = true;
+                        }
+                        else
                         {
                             var point = Points[rowIndexOfCanvas, colIndexOfCanvas];
                             point.IsOccupied = true;
-                            point.Color = ActiveBlock.Color;
+                            var blockColor = ColorUtility.FromColorNameToColor(ActiveBlock.Color);
+                            point.Color = blockColor.ChangeGreyScale(0.2).FromColorToHex();
                         }
                     }
                 }

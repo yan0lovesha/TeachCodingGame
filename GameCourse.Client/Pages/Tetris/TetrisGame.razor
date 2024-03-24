@@ -11,7 +11,7 @@
         }
         else
         {
-            <button @onclick="StartButtonClicked">Start</button>
+            <button @onclick="StartButtonClicked">@GetButtonText()</button>
             <div id="canvas" style="@canvasStyle">
                 <!-- Active Block -->
                 <TetrisBlock BlockObject="@(GameCanvas.ActiveBlock)"></TetrisBlock>
@@ -53,12 +53,29 @@
 
     string canvasStyle = "";
 
+    private string GetButtonText()
+    {
+        return TetrisGameStatus switch
+        {
+            GameStatus.Stopped => "Start",
+            GameStatus.Running => "Stop",
+            GameStatus.Loose => "Loose",
+            _ => "Error"
+        };
+    }
+
     private async Task GameLoop()
     {
         while (TetrisGameStatus == GameStatus.Running)
         {
             await Task.Delay(500);
             GameCanvas.MoveActiveBlockTo(Direction.Down);
+
+            if (GameCanvas.IsCanvasFull)
+            {
+                TetrisGameStatus = GameStatus.Loose;
+            }
+
             StateHasChanged();
         }
     }
@@ -84,10 +101,15 @@
         }
     }
 
-    protected override async Task OnParametersSetAsync()
+    private void StartNewCanvas()
     {
         canvasStyle = $"width: {Options.CanvasColumnsCount * Options.CellSize + 8}px; height: {Options.CanvasRowsCount * Options.CellSize + 8}px; grid-template-columns: repeat({Options.CanvasColumnsCount}, {Options.CellSize}px); grid-template-rows: repeat({Options.CanvasRowsCount}, {Options.CellSize}px);";
         GameCanvas = new Canvas(Options);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        StartNewCanvas();
         await base.OnParametersSetAsync();
     }
 
@@ -100,17 +122,23 @@
         }
         await base.OnAfterRenderAsync(firstRender);
     }
+
     private async Task StartButtonClicked(MouseEventArgs e)
     {
-        if (TetrisGameStatus == GameStatus.Stopped)
+        switch (TetrisGameStatus)
         {
-            TetrisGameStatus = GameStatus.Running;
-            await gameUIElement.FocusAsync();
-            GameLoop();
-        }
-        else if(TetrisGameStatus == GameStatus.Running)
-        {
-            TetrisGameStatus = GameStatus.Stopped;
+            case GameStatus.Stopped:
+            case GameStatus.Loose:
+                StartNewCanvas();
+                TetrisGameStatus = GameStatus.Running;
+                await gameUIElement.FocusAsync();
+                GameLoop();
+                break;
+            case GameStatus.Running:
+                TetrisGameStatus = GameStatus.Stopped;
+                break;
+            default:
+                break;
         }
     }
 }
