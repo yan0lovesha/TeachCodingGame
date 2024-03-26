@@ -1,9 +1,10 @@
 ﻿@page "/games/tetris"
+@using System.Collections.Concurrent
 @rendermode InteractiveWebAssembly
 
 <PageTitle>TetrisGame</PageTitle>
 
-<div @ref="gameUIElement" tabindex="0" id="gameContainer" @onkeydown="OnKeyPress">
+<div @ref="gameUIElement" tabindex="0" id="gameContainer" @onkeydown="OnKeyDown" @onkeyup="OnKeyUp">
     <CascadingValue Value="Options">
         @if (!@isLoaded)
         {
@@ -31,8 +32,13 @@
 </div>
 
 @code {
-    bool isLoaded = false;
-    ElementReference gameUIElement;
+    enum Keys
+    {
+        Up,
+        Right,
+        Down,
+        Left
+    }
 
     enum GameStatus
     {
@@ -40,6 +46,10 @@
         Running,
         Loose
     }
+
+    bool isLoaded = false;
+    ElementReference gameUIElement;
+    CancellationTokenSource loopWaitingCancellationToken = new CancellationTokenSource();
 
     GameOptions Options = new GameOptions()
         {
@@ -50,6 +60,10 @@
 
     Canvas GameCanvas;
     GameStatus TetrisGameStatus = GameStatus.Stopped;
+
+    ConcurrentDictionary<Keys, Object> PressedKeys = new ConcurrentDictionary<Keys, Object>();
+    ConcurrentDictionary<Keys, Object> KeysWaitingForProcess = new ConcurrentDictionary<Keys, Object>();
+
 
     string canvasStyle = "";
 
@@ -64,12 +78,75 @@
         };
     }
 
+    bool processedKeyTap = false;
+
     private async Task GameLoop()
     {
         while (TetrisGameStatus == GameStatus.Running)
         {
-            await Task.Delay(500);
-            GameCanvas.MoveActiveBlockTo(Direction.Down);
+            if (PressedKeys.Count == 0 || processedKeyTap)
+            {
+                try
+                {
+                    if (processedKeyTap)
+                    {
+                        await Task.Delay(300, loopWaitingCancellationToken.Token);
+                    }
+                    else
+                    {
+                        await Task.Delay(500, loopWaitingCancellationToken.Token);
+                    }
+                    GameCanvas.MoveActiveBlockTo(Direction.Down);
+                    processedKeyTap = false;
+                }
+                catch (OperationCanceledException)
+                {
+                    if (KeysWaitingForProcess.ContainsKey(Keys.Up))
+                    {
+                        GameCanvas.TurnActiveBlock();
+                        KeysWaitingForProcess.TryRemove(Keys.Up, out _);
+                    }
+                    if (KeysWaitingForProcess.ContainsKey(Keys.Left))
+                    {
+                        GameCanvas.MoveActiveBlockTo(Direction.Left);
+                        KeysWaitingForProcess.TryRemove(Keys.Left, out _);
+                    }
+                    if (KeysWaitingForProcess.ContainsKey(Keys.Right))
+                    {
+                        GameCanvas.MoveActiveBlockTo(Direction.Right);
+                        KeysWaitingForProcess.TryRemove(Keys.Right, out _);
+                    }
+                    if (KeysWaitingForProcess.ContainsKey(Keys.Down))
+                    {
+                        GameCanvas.MoveActiveBlockTo(Direction.Down);
+                        KeysWaitingForProcess.TryRemove(Keys.Down, out _);
+                    }
+                    loopWaitingCancellationToken = new CancellationTokenSource();
+                    processedKeyTap = true;
+                }
+            }
+            else
+            {
+                await Task.Delay(50);
+
+                if (PressedKeys.ContainsKey(Keys.Up))
+                {
+                    GameCanvas.TurnActiveBlock();
+                }
+                if (PressedKeys.ContainsKey(Keys.Left))
+                {
+                    GameCanvas.MoveActiveBlockTo(Direction.Left);
+                }
+                if (PressedKeys.ContainsKey(Keys.Right))
+                {
+                    GameCanvas.MoveActiveBlockTo(Direction.Right);
+                }
+                if (PressedKeys.ContainsKey(Keys.Down))
+                {
+                    GameCanvas.MoveActiveBlockTo(Direction.Down);
+                }
+            }
+
 
             if (GameCanvas.IsCanvasFull)
             {
@@ -80,21 +157,49 @@
         }
     }
 
-    private void OnKeyPress(KeyboardEventArgs e)
+    private void OnKeyDown(KeyboardEventArgs e)
     {
+        Console.WriteLine($"KeyDown: {e.Key}");
         switch (e.Key)
         {
             case "ArrowUp":
-                GameCanvas.TurnActiveBlock();
+                PressedKeys.TryAdd(Keys.Up, null);
+                KeysWaitingForProcess.TryAdd(Keys.Up, null);
                 break;
             case "ArrowLeft":
-                GameCanvas.MoveActiveBlockTo(Direction.Left);
+                PressedKeys.TryAdd(Keys.Left, null);
+                KeysWaitingForProcess.TryAdd(Keys.Left, null);
                 break;
             case "ArrowDown":
-                GameCanvas.MoveActiveBlockTo(Direction.Down);
+                PressedKeys.TryAdd(Keys.Down, null);
+                KeysWaitingForProcess.TryAdd(Keys.Down, null);
                 break;
             case "ArrowRight":
-                GameCanvas.MoveActiveBlockTo(Direction.Right);
+                PressedKeys.TryAdd(Keys.Right, null);
+                KeysWaitingForProcess.TryAdd(Keys.Right, null);
+                break;
+            default:
+                break;
+        }
+        loopWaitingCancellationToken.Cancel();
+    }
+
+    private void OnKeyUp(KeyboardEventArgs e)
+    {
+        Console.WriteLine($"KeyUp: {e.Key}");
+        switch (e.Key)
+        {
+            case "ArrowUp":
+                PressedKeys.TryRemove(Keys.Up, out _);
+                break;
+            case "ArrowLeft":
+                PressedKeys.TryRemove(Keys.Left, out _);
+                break;
+            case "ArrowDown":
+                PressedKeys.TryRemove(Keys.Down, out _);
+                break;
+            case "ArrowRight":
+                PressedKeys.TryRemove(Keys.Right, out _);
                 break;
             default:
                 break;

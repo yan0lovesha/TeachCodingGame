@@ -140,6 +140,8 @@ namespace GameCourse.Client.Pages.Tetris
                 {
                     LockActiveBlock();
                     EliminateFullRows();
+
+                    PickABlock();
                 }
             }
         }
@@ -171,8 +173,6 @@ namespace GameCourse.Client.Pages.Tetris
                     }
                 }
             }
-
-            PickABlock();
         }
 
         private bool AreShapeAndCanvasOverlap(int blockPositionRow, int blockPositionCol, int[,] shape)
