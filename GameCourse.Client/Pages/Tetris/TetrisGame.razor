@@ -49,7 +49,6 @@
 
     bool isLoaded = false;
     ElementReference gameUIElement;
-    CancellationTokenSource loopWaitingCancellationToken = new CancellationTokenSource();
 
     GameOptions Options = new GameOptions()
         {
@@ -67,6 +66,9 @@
 
     string canvasStyle = "";
 
+    System.Timers.Timer loopTimer = new System.Timers.Timer(2000);
+    private object timerLock = new object();
+
     private string GetButtonText()
     {
         return TetrisGameStatus switch
@@ -79,82 +81,90 @@
     }
 
     bool processedKeyTap = false;
+    bool isLongPressing = false;
 
-    private async Task GameLoop()
+    private void GameLoop(object? source, System.Timers.ElapsedEventArgs? args)
     {
-        while (TetrisGameStatus == GameStatus.Running)
+        Monitor.Enter(timerLock);
+
+        loopTimer.Interval = 1000;
+        Console.WriteLine("Set interval: 1000");
+        if (PressedKeys.Count == 0)// || processedKeyTap)
         {
-            if (PressedKeys.Count == 0 || processedKeyTap)
+            if (source == loopTimer)
             {
-                try
-                {
-                    if (processedKeyTap)
-                    {
-                        await Task.Delay(300, loopWaitingCancellationToken.Token);
-                    }
-                    else
-                    {
-                        await Task.Delay(500, loopWaitingCancellationToken.Token);
-                    }
-                    GameCanvas.MoveActiveBlockTo(Direction.Down);
-                    processedKeyTap = false;
-                }
-                catch (OperationCanceledException)
-                {
-                    if (KeysWaitingForProcess.ContainsKey(Keys.Up))
-                    {
-                        GameCanvas.TurnActiveBlock();
-                        KeysWaitingForProcess.TryRemove(Keys.Up, out _);
-                    }
-                    if (KeysWaitingForProcess.ContainsKey(Keys.Left))
-                    {
-                        GameCanvas.MoveActiveBlockTo(Direction.Left);
-                        KeysWaitingForProcess.TryRemove(Keys.Left, out _);
-                    }
-                    if (KeysWaitingForProcess.ContainsKey(Keys.Right))
-                    {
-                        GameCanvas.MoveActiveBlockTo(Direction.Right);
-                        KeysWaitingForProcess.TryRemove(Keys.Right, out _);
-                    }
-                    if (KeysWaitingForProcess.ContainsKey(Keys.Down))
-                    {
-                        GameCanvas.MoveActiveBlockTo(Direction.Down);
-                        KeysWaitingForProcess.TryRemove(Keys.Down, out _);
-                    }
-                    loopWaitingCancellationToken = new CancellationTokenSource();
-                    processedKeyTap = true;
-                }
+                GameCanvas.MoveActiveBlockTo(Direction.Down);
+            }
+
+            processedKeyTap = KeysWaitingForProcess.Count > 0;
+
+            if (KeysWaitingForProcess.ContainsKey(Keys.Up))
+            {
+                GameCanvas.TurnActiveBlock();
+                KeysWaitingForProcess.TryRemove(Keys.Up, out _);
+            }
+            if (KeysWaitingForProcess.ContainsKey(Keys.Left))
+            {
+                GameCanvas.MoveActiveBlockTo(Direction.Left);
+                KeysWaitingForProcess.TryRemove(Keys.Left, out _);
+            }
+            if (KeysWaitingForProcess.ContainsKey(Keys.Right))
+            {
+                GameCanvas.MoveActiveBlockTo(Direction.Right);
+                KeysWaitingForProcess.TryRemove(Keys.Right, out _);
+            }
+            if (KeysWaitingForProcess.ContainsKey(Keys.Down))
+            {
+                GameCanvas.MoveActiveBlockTo(Direction.Down);
+                KeysWaitingForProcess.TryRemove(Keys.Down, out _);
+            }
+
+            loopTimer.Interval = processedKeyTap ? 300 : 1000;
+        }
+        else
+        {
+            if (!isLongPressing)
+            {
+                loopTimer.Interval = 1000;
+                isLongPressing = true;
             }
             else
             {
-                await Task.Delay(50);
-
-                if (PressedKeys.ContainsKey(Keys.Up))
-                {
-                    GameCanvas.TurnActiveBlock();
-                }
-                if (PressedKeys.ContainsKey(Keys.Left))
-                {
-                    GameCanvas.MoveActiveBlockTo(Direction.Left);
-                }
-                if (PressedKeys.ContainsKey(Keys.Right))
-                {
-                    GameCanvas.MoveActiveBlockTo(Direction.Right);
-                }
-                if (PressedKeys.ContainsKey(Keys.Down))
-                {
-                    GameCanvas.MoveActiveBlockTo(Direction.Down);
-                }
+                loopTimer.Interval = 50;
             }
-
-
-            if (GameCanvas.IsCanvasFull)
+            if (PressedKeys.ContainsKey(Keys.Up))
             {
-                TetrisGameStatus = GameStatus.Loose;
+                GameCanvas.TurnActiveBlock();
             }
-
-            StateHasChanged();
+            if (PressedKeys.ContainsKey(Keys.Left))
+            {
+                GameCanvas.MoveActiveBlockTo(Direction.Left);
+            }
+            if (PressedKeys.ContainsKey(Keys.Right))
+            {
+                GameCanvas.MoveActiveBlockTo(Direction.Right);
+            }
+            if (PressedKeys.ContainsKey(Keys.Down))
+            {
+                GameCanvas.MoveActiveBlockTo(Direction.Down);
+            }
         }
+
+
+        if (GameCanvas.IsCanvasFull)
+        {
+            TetrisGameStatus = GameStatus.Loose;
+            // loopTimer.Stop();
+        }
+
+        StateHasChanged();
+
+        if (!GameCanvas.IsCanvasFull)
+        {
+            loopTimer.Start();
+        }
+
+        Monitor.Exit(timerLock);
     }
 
     private void OnKeyDown(KeyboardEventArgs e)
@@ -181,7 +191,7 @@
             default:
                 break;
         }
-        loopWaitingCancellationToken.Cancel();
+        GameLoop(null, null);
     }
 
     private void OnKeyUp(KeyboardEventArgs e)
@@ -204,6 +214,7 @@
             default:
                 break;
         }
+        isLongPressing = false;
     }
 
     private void StartNewCanvas()
@@ -215,6 +226,8 @@
     protected override async Task OnParametersSetAsync()
     {
         StartNewCanvas();
+        loopTimer.AutoReset = false;
+        loopTimer.Elapsed += GameLoop;
         await base.OnParametersSetAsync();
     }
 
@@ -237,10 +250,11 @@
                 StartNewCanvas();
                 TetrisGameStatus = GameStatus.Running;
                 await gameUIElement.FocusAsync();
-                GameLoop();
+                loopTimer.Start();
                 break;
             case GameStatus.Running:
                 TetrisGameStatus = GameStatus.Stopped;
+                loopTimer.Stop();
                 break;
             default:
                 break;
