@@ -1,5 +1,6 @@
 ﻿@page "/games/tetris"
 @using System.Collections.Concurrent
+@using Timer = System.Timers.Timer
 @rendermode InteractiveWebAssembly
 
 <PageTitle>TetrisGame</PageTitle>
@@ -49,7 +50,6 @@
 
     bool isLoaded = false;
     ElementReference gameUIElement;
-
     GameOptions Options = new GameOptions()
         {
             CanvasRowsCount = 18,
@@ -66,7 +66,9 @@
 
     string canvasStyle = "";
 
-    System.Timers.Timer loopTimer = new System.Timers.Timer(2000);
+    Timer fallingTimer = new Timer(2000);
+    Timer keyPressingTimer = new Timer();
+
     private object timerLock = new object();
 
     private string GetButtonText()
@@ -80,88 +82,91 @@
         };
     }
 
-    bool processedKeyTap = false;
-    bool isLongPressing = false;
+    private void FallingLoop(object? source, System.Timers.ElapsedEventArgs? args)
+    {
+        Monitor.Enter(timerLock);
+        if (GameCanvas.IsCanvasFull)
+        {
+            fallingTimer.Stop();
+        }
 
-    private void GameLoop(object? source, System.Timers.ElapsedEventArgs? args)
+        GameCanvas.MoveActiveBlockTo(Direction.Down);
+        StateHasChanged();
+        Monitor.Exit(timerLock);
+    }
+
+    private void ReactToKeysInDic(ConcurrentDictionary<Keys, object> keysDic, bool removeKey)
+    {
+        if (keysDic.ContainsKey(Keys.Up))
+        {
+            GameCanvas.TurnActiveBlock();
+            if (removeKey)
+                keysDic.TryRemove(Keys.Up, out _);
+        }
+        if (keysDic.ContainsKey(Keys.Left))
+        {
+            GameCanvas.MoveActiveBlockTo(Direction.Left);
+            if (removeKey)
+                keysDic.TryRemove(Keys.Left, out _);
+        }
+        if (keysDic.ContainsKey(Keys.Right))
+        {
+            GameCanvas.MoveActiveBlockTo(Direction.Right);
+            if (removeKey)
+                keysDic.TryRemove(Keys.Right, out _);
+        }
+        if (keysDic.ContainsKey(Keys.Down))
+        {
+            GameCanvas.MoveActiveBlockTo(Direction.Down);
+            if (removeKey)
+                keysDic.TryRemove(Keys.Down, out _);
+        }
+    }
+
+    private void KeyPressLoop(object? source, System.Timers.ElapsedEventArgs? args)
     {
         Monitor.Enter(timerLock);
 
-        loopTimer.Interval = 1000;
-        Console.WriteLine("Set interval: 1000");
-        if (PressedKeys.Count == 0)// || processedKeyTap)
+        var isPressedKeysEmpty = PressedKeys.IsEmpty;
+        var isKeysWaitingForProcessEmpty = KeysWaitingForProcess.IsEmpty;
+
+        if (isPressedKeysEmpty && !isKeysWaitingForProcessEmpty)
         {
-            if (source == loopTimer)
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Down);
-            }
-
-            processedKeyTap = KeysWaitingForProcess.Count > 0;
-
-            if (KeysWaitingForProcess.ContainsKey(Keys.Up))
-            {
-                GameCanvas.TurnActiveBlock();
-                KeysWaitingForProcess.TryRemove(Keys.Up, out _);
-            }
-            if (KeysWaitingForProcess.ContainsKey(Keys.Left))
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Left);
-                KeysWaitingForProcess.TryRemove(Keys.Left, out _);
-            }
-            if (KeysWaitingForProcess.ContainsKey(Keys.Right))
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Right);
-                KeysWaitingForProcess.TryRemove(Keys.Right, out _);
-            }
-            if (KeysWaitingForProcess.ContainsKey(Keys.Down))
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Down);
-                KeysWaitingForProcess.TryRemove(Keys.Down, out _);
-            }
-
-            loopTimer.Interval = processedKeyTap ? 300 : 1000;
+            keyPressingTimer.Interval = 2000;
+            ReactToKeysInDic(KeysWaitingForProcess, true);
+            keyPressingTimer.Stop();
         }
-        else
+
+        if (!isPressedKeysEmpty && !isKeysWaitingForProcessEmpty)
         {
-            if (!isLongPressing)
-            {
-                loopTimer.Interval = 1000;
-                isLongPressing = true;
-            }
-            else
-            {
-                loopTimer.Interval = 50;
-            }
-            if (PressedKeys.ContainsKey(Keys.Up))
-            {
-                GameCanvas.TurnActiveBlock();
-            }
-            if (PressedKeys.ContainsKey(Keys.Left))
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Left);
-            }
-            if (PressedKeys.ContainsKey(Keys.Right))
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Right);
-            }
-            if (PressedKeys.ContainsKey(Keys.Down))
-            {
-                GameCanvas.MoveActiveBlockTo(Direction.Down);
-            }
+            keyPressingTimer.Interval = 1000;
+            ReactToKeysInDic(KeysWaitingForProcess, true);
+            // remove key from KeysWaitingForProcess
+    }
+        if (isPressedKeysEmpty && isKeysWaitingForProcessEmpty)
+        {
+            keyPressingTimer.Stop();
         }
+
+        if (!isPressedKeysEmpty && isKeysWaitingForProcessEmpty)
+        {
+            keyPressingTimer.Interval = 50;
+            ReactToKeysInDic(PressedKeys, false);
+        }
+
 
 
         if (GameCanvas.IsCanvasFull)
         {
             TetrisGameStatus = GameStatus.Loose;
-            // loopTimer.Stop();
+            keyPressingTimer.Stop();
         }
 
         StateHasChanged();
 
         if (!GameCanvas.IsCanvasFull)
         {
-            loopTimer.Start();
+            keyPressingTimer.Start();
         }
 
         Monitor.Exit(timerLock);
@@ -191,7 +196,7 @@
             default:
                 break;
         }
-        GameLoop(null, null);
+        KeyPressLoop(null, null);
     }
 
     private void OnKeyUp(KeyboardEventArgs e)
@@ -214,7 +219,6 @@
             default:
                 break;
         }
-        isLongPressing = false;
     }
 
     private void StartNewCanvas()
@@ -226,8 +230,11 @@
     protected override async Task OnParametersSetAsync()
     {
         StartNewCanvas();
-        loopTimer.AutoReset = false;
-        loopTimer.Elapsed += GameLoop;
+        fallingTimer.AutoReset = true;
+        fallingTimer.Elapsed += FallingLoop;
+
+        keyPressingTimer.AutoReset = false;
+        keyPressingTimer.Elapsed += KeyPressLoop;
         await base.OnParametersSetAsync();
     }
 
@@ -250,11 +257,11 @@
                 StartNewCanvas();
                 TetrisGameStatus = GameStatus.Running;
                 await gameUIElement.FocusAsync();
-                loopTimer.Start();
+                fallingTimer.Start();
                 break;
             case GameStatus.Running:
                 TetrisGameStatus = GameStatus.Stopped;
-                loopTimer.Stop();
+                fallingTimer.Stop();
                 break;
             default:
                 break;
