@@ -69,6 +69,7 @@
         align-items: center;
         line-height: 3rem;
         width: 100%;
+        padding: 8px 16px;
     }
 
 .nav-item ::deep a.active {
