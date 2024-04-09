@@ -148,6 +148,7 @@ namespace GameCourse.Client.Pages.Tetris
 
         private void LockActiveBlock()
         {
+            // Go through all the cell of active block to set occupied of each corresponding cell in canvas.
             for (int row = 0; row < ActiveBlock.BlockHeight; row++)
             {
                 for (int col = 0; col < ActiveBlock.BlockWidth; col++)
@@ -238,7 +239,8 @@ namespace GameCourse.Client.Pages.Tetris
                         // move the row to filling row
                         for (var col = 0; col < Columns; col++)
                         {
-                            Points[fillingRow, col] = Points[row, col];
+                            Points[fillingRow, col].Color = Points[row, col].Color;
+                            Points[fillingRow, col].IsOccupied = Points[row, col].IsOccupied;
                         }
                         fillingRow--;
                     }
