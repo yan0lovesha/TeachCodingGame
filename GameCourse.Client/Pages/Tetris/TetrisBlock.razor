@@ -1,4 +1,4 @@
-﻿<div id="ActiveBlock" style="grid-template-columns: repeat(@(BlockObject.BlockWidth), @(Options.CellSize)px);grid-template-rows: repeat(@(BlockObject.BlockHeight), @(Options.CellSize)px);gap: 0px; top: @(BlockObject.PositionRow * Options.CellSize)px; left: @(BlockObject.PositionColumn * Options.CellSize)px">
+﻿<div id="@Id" class="TetrisBlock" style="grid-template-columns: repeat(@(BlockObject.BlockWidth), @(Options.CellSize)px);grid-template-rows: repeat(@(BlockObject.BlockHeight), @(Options.CellSize)px);gap: 0px; top: @(BlockObject.PositionRow * Options.CellSize)px; left: @(BlockObject.PositionColumn * Options.CellSize)px">
     @for (int row = 0; row < BlockObject.BlockHeight; row++)
     {
         for (int column = 0; column < BlockObject.BlockWidth; column++)
@@ -14,6 +14,9 @@
 
     [Parameter]
     public Block BlockObject { get; set; }
+
+    [Parameter]
+    public string Id{ get; set; }
 
     private string GetCellColor(int row, int column) => BlockObject.Shape[row, column] == 1 ? BlockObject.Color : "";
 

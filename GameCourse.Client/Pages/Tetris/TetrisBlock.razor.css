@@ -1,4 +1,7 @@
-﻿#ActiveBlock {
-    position: absolute;
+﻿.TetrisBlock {
     display: grid;
+}
+
+#ActiveBlock {
+    position: absolute;
 }

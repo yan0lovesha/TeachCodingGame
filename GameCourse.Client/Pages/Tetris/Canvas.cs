@@ -53,6 +53,7 @@ namespace GameCourse.Client.Pages.Tetris
             Rows = options.CanvasRowsCount;
             Columns = options.CanvasColumnsCount;
             Points = new CanvasPoint[Rows, Columns];
+
             for (int row = 0; row < Rows; row++)
             {
                 for (int col = 0; col < Columns; col++)
@@ -60,7 +61,10 @@ namespace GameCourse.Client.Pages.Tetris
                     Points[row, col] = new CanvasPoint();
                 }
             }
+        }
 
+        public void StartGame()
+        {
             for (int i = 0; i < 3; i++)
             {
                 BlockCandidatesQueue.Enqueue(GetRandomBlock());

@@ -13,20 +13,36 @@
         }
         else
         {
-            <button @onclick="StartButtonClicked">@GetButtonText()</button>
-            <div id="canvas" style="@canvasStyle">
-                <!-- Active Block -->
-                <TetrisBlock BlockObject="@(GameCanvas.ActiveBlock)"></TetrisBlock>
-                <!-- End of Active Block -->
-                <!-- Canvas cells -->
-                @for (int row = 0; row < GameCanvas.Rows; row++)
-                {
-                    for (int column = 0; column < GameCanvas.Columns; column++)
-                    {
-                        <div id="CanvasCell_@(row)_@(column)" class="@(GameCanvas.Points[row,column].IsOccupied ? "CanvasCell" : "EmptyCanvasCell")" style="background-color: @(GameCanvas.Points[row,column].Color)"></div>
-                    }
-                }
-                <!-- End of Canvas cells -->
+            <div id="game_container">
+                <div id="canvas">
+                    <div id="tetris_grid" style="@canvasStyle">
+                        <!-- Active Block -->
+                        <TetrisBlock Id="ActiveBlock" BlockObject="@(GameCanvas.ActiveBlock)"></TetrisBlock>
+                        <!-- End of Active Block -->
+                        <!-- Canvas cells -->
+                        @for (int row = 0; row < GameCanvas.Rows; row++)
+                        {
+                            for (int column = 0; column < GameCanvas.Columns; column++)
+                            {
+                                <div id="CanvasCell_@(row)_@(column)" class="@(GameCanvas.Points[row,column].IsOccupied ? "CanvasCell" : "EmptyCanvasCell")" style="background-color: @(GameCanvas.Points[row,column].Color)"></div>
+                            }
+                        }
+                        <!-- End of Canvas cells -->
+                    </div>
+                </div>
+
+                <div id="control_panel">
+                    <button @onclick="StartButtonClicked">@GetButtonText()</button>
+                    <div id="candidates">
+                        @foreach (var candidateBlock in GameCanvas.BlockCandidatesQueue)
+                        {
+                            <TetrisBlock Id="Candidate0" BlockObject="@(candidateBlock)"></TetrisBlock>
+                        }
+                        @* <TetrisBlock Id="Candidate0" BlockObject="@(GameCanvas.BlockCandidatesQueue.ElementAt(0))"></TetrisBlock>
+                        <TetrisBlock Id="Candidate1" BlockObject="@(GameCanvas.BlockCandidatesQueue.ElementAt(1))"></TetrisBlock>
+                        <TetrisBlock id="Candidate2" BlockObject="@(GameCanvas.BlockCandidatesQueue.ElementAt(2))"></TetrisBlock> *@
+                    </div>
+                </div>
             </div>
         }
     </CascadingValue>
@@ -82,21 +98,40 @@
         };
     }
 
+    private void CheckMistake(string tag)
+    {
+        for (int i = 0; i < GameCanvas.ActiveBlock.BlockWidth; i++)
+        {
+            if (GameCanvas.Points[0, GameCanvas.ActiveBlock.PositionColumn + i].IsOccupied)
+            {
+                Console.WriteLine($"WRONG in {tag}.");
+            }
+        }
+    }
+
     private void FallingLoop(object? source, System.Timers.ElapsedEventArgs? args)
     {
         Monitor.Enter(timerLock);
+        Console.WriteLine("Enter Falling loop.");
         if (GameCanvas.IsCanvasFull)
         {
             fallingTimer.Stop();
         }
 
         GameCanvas.MoveActiveBlockTo(Direction.Down);
+
+        CheckMistake("FallingLoop1");
+
         StateHasChanged();
+
+        CheckMistake("FallingLoop2");
         Monitor.Exit(timerLock);
+        Console.WriteLine("Exit Falling loop.");
     }
 
     private void ReactToKeysInDic(ConcurrentDictionary<Keys, object> keysDic, bool removeKey)
     {
+        CheckMistake("ReactToKeysInDic1");
         if (keysDic.ContainsKey(Keys.Up))
         {
             GameCanvas.TurnActiveBlock();
@@ -121,17 +156,22 @@
             if (removeKey)
                 keysDic.TryRemove(Keys.Down, out _);
         }
+
+
+        CheckMistake("ReactToKeysInDic2");
     }
 
     private void KeyPressLoop(object? source, System.Timers.ElapsedEventArgs? args)
     {
         Monitor.Enter(timerLock);
+        Console.WriteLine("Enter KeyPressLoop.");
 
         var isPressedKeysEmpty = PressedKeys.IsEmpty;
         var isKeysWaitingForProcessEmpty = KeysWaitingForProcess.IsEmpty;
 
         if (isPressedKeysEmpty && !isKeysWaitingForProcessEmpty)
         {
+            Console.WriteLine("1");
             keyPressingTimer.Interval = 2000;
             ReactToKeysInDic(KeysWaitingForProcess, true);
             keyPressingTimer.Stop();
@@ -139,17 +179,20 @@
 
         if (!isPressedKeysEmpty && !isKeysWaitingForProcessEmpty)
         {
+            Console.WriteLine("2");
             keyPressingTimer.Interval = 1000;
             ReactToKeysInDic(KeysWaitingForProcess, true);
             // remove key from KeysWaitingForProcess
-    }
+        }
         if (isPressedKeysEmpty && isKeysWaitingForProcessEmpty)
         {
+            Console.WriteLine("3");
             keyPressingTimer.Stop();
         }
 
         if (!isPressedKeysEmpty && isKeysWaitingForProcessEmpty)
         {
+            Console.WriteLine("4");
             keyPressingTimer.Interval = 50;
             ReactToKeysInDic(PressedKeys, false);
         }
@@ -158,23 +201,26 @@
 
         if (GameCanvas.IsCanvasFull)
         {
+            Console.WriteLine("5");
             TetrisGameStatus = GameStatus.Loose;
             keyPressingTimer.Stop();
         }
 
         StateHasChanged();
 
-        if (!GameCanvas.IsCanvasFull)
-        {
-            keyPressingTimer.Start();
-        }
+        // if (!GameCanvas.IsCanvasFull)
+        // {
+        //     Console.WriteLine("6");
+        //     keyPressingTimer.Start();
+        // }
 
         Monitor.Exit(timerLock);
+
+        Console.WriteLine("Exit KeyPressLoop.");
     }
 
     private void OnKeyDown(KeyboardEventArgs e)
     {
-        Console.WriteLine($"KeyDown: {e.Key}");
         switch (e.Key)
         {
             case "ArrowUp":
@@ -201,7 +247,6 @@
 
     private void OnKeyUp(KeyboardEventArgs e)
     {
-        Console.WriteLine($"KeyUp: {e.Key}");
         switch (e.Key)
         {
             case "ArrowUp":
@@ -254,7 +299,7 @@
         {
             case GameStatus.Stopped:
             case GameStatus.Loose:
-                StartNewCanvas();
+                GameCanvas.StartGame();
                 TetrisGameStatus = GameStatus.Running;
                 await gameUIElement.FocusAsync();
                 fallingTimer.Start();

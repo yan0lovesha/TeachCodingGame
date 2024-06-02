@@ -1,7 +1,18 @@
-﻿#canvas {
+﻿#game_container {
+    display: grid;
+    grid-template-columns: 500px 200px;
+}
+
+#tetris_grid {
     border: 4px double blue;
     position: relative;
     display: grid;
     gap: 0px;
     overflow: hidden;
 }
+
+#candidates {
+    border: 4px double red;
+    position: relative;
+}
+
